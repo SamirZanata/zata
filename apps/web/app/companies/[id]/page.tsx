@@ -10,15 +10,19 @@ import { CreateInvoiceDialog } from '@/src/components/create-invoice-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/src/components/ui/tabs';
 import { Badge } from '@/src/components/ui/badge';
 import { EmitInvoiceButton } from '@/src/components/emit-invoice-button';
+import { getAuthHeaders } from '@/src/lib/api-client';
 
 async function getCompany(id: string): Promise<Company & { customers: Customer[] } | null> {
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000);
 
+    const headers = await getAuthHeaders();
+
     const res = await fetch(`http://localhost:3333/companies/${id}`, {
       cache: 'no-store',
       signal: controller.signal,
+      headers,
     });
 
     clearTimeout(timeoutId);
@@ -84,9 +88,12 @@ async function getInvoices(companyId: string): Promise<Invoice[]> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000);
 
+    const headers = await getAuthHeaders();
+
     const res = await fetch(`http://localhost:3333/invoices?companyId=${companyId}`, {
       cache: 'no-store',
       signal: controller.signal,
+      headers,
     });
 
     clearTimeout(timeoutId);

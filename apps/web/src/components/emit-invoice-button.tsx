@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/src/components/ui/button';
 import { showToast } from '@/src/components/ui/toast';
+import { getAuthHeadersClient } from '@/src/lib/api-client-client';
 
 interface EmitInvoiceButtonProps {
   invoiceId: string;
@@ -22,11 +23,10 @@ export function EmitInvoiceButton({ invoiceId, status }: EmitInvoiceButtonProps)
   const handleEmit = async () => {
     setIsLoading(true);
     try {
+      const headers = getAuthHeadersClient();
       const response = await fetch(`http://localhost:3333/invoices/${invoiceId}/emit`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
       });
 
       if (!response.ok) {

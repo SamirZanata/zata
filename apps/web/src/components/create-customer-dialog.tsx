@@ -18,6 +18,7 @@ import {
 import { Button } from '@/src/components/ui/button';
 import { Input } from '@/src/components/ui/input';
 import { Label } from '@/src/components/ui/label';
+import { getAuthHeadersClient } from '@/src/lib/api-client-client';
 
 interface CreateCustomerDialogProps {
   companyId: string;
@@ -53,11 +54,10 @@ export function CreateCustomerDialog({ companyId }: CreateCustomerDialogProps) {
         ...(data.addressCity && data.addressCity.trim() !== '' && { addressCity: data.addressCity }),
       };
 
+      const headers = getAuthHeadersClient();
       const response = await fetch(`http://localhost:3333/companies/${companyId}/customers`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify(payload),
       });
 

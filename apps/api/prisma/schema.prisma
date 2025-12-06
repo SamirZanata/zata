@@ -1,0 +1,177 @@
+// INICIO SCHEMA
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  passwordHash  String
+  name          String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  companies     CompanyUser[]
+
+  @@map("users")
+}
+
+enum TaxRegime {
+  MEI
+  SIMPLES_NACIONAL
+  LUCRO_PRESUMIDO
+}
+
+model Company {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Identificação
+  cnpj        String  @unique // Apenas números
+  legalName   String  // Razão Social
+  tradeName   String? // Nome Fantasia (Opcional para MEI)
+  email       String  @unique // Email comercial (único para login)
+  password    String  // Senha criptografada (bcrypt)
+
+  // Dados Fiscais
+  municipalRegistration String? // Inscrição Municipal (Obrigatório para NFS-e)
+  taxRegime            TaxRegime @default(MEI)
+
+  // Segurança do Certificado A1 (Security First)
+  // NUNCA guardamos o arquivo .pfx ou a senha em texto plano.
+  certificateStoragePath String? // Caminho do arquivo (Local ou S3)
+  certificatePasswordIv  String? // Vector de inicialização da criptografia
+  certificatePasswordContent String? // Senha criptografada
+  certificateExpiry      DateTime? // Para avisar quando vai vencer
+
+  // Endereço (Necessário para Nota Fiscal)
+  addressStreet   String?
+  addressNumber   String?
+  addressZip      String? // CEP
+  addressCity     String?
+  addressState    String? // UF (2 letras)
+
+  // Relações
+  users         CompanyUser[]
+  customers     Customer[]
+  services      ServiceCatalog[]
+  invoices      Invoice[]
+  transactions  Transaction[]
+
+  @@map("companies")
+}
+
+model CompanyUser {
+  id        String  @id @default(uuid())
+  userId    String
+  companyId String
+  role      String  @default("OWNER")
+  user      User    @relation(fields: [userId], references: [id])
+  company   Company @relation(fields: [companyId], references: [id])
+
+  @@unique([userId, companyId])
+  @@map("company_users")
+}
+
+model Customer {
+  id            String   @id @default(uuid())
+  companyId     String
+  name          String
+  document      String
+  email         String?
+  phone         String?
+  addressStreet String?
+  addressNumber String?
+  addressCity   String?
+  addressState  String?
+  addressZip    String?
+  company       Company  @relation(fields: [companyId], references: [id])
+  invoices      Invoice[]
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  @@map("customers")
+}
+
+model ServiceCatalog {
+  id            String  @id @default(uuid())
+  companyId     String
+  name          String
+  serviceCode   String
+  cnae          String?
+  defaultPrice  Decimal @db.Decimal(10, 2)
+  description   String?
+  company       Company @relation(fields: [companyId], references: [id])
+
+  @@map("service_catalogs")
+}
+
+enum InvoiceStatus {
+  DRAFT        // Rascunho (ainda não enviada)
+  PENDING      // Enviada para a fila, aguardando processamento
+  PROCESSING   // Sendo processada pela API externa
+  AUTHORIZED   // Sucesso (Nota Gerada)
+  ERROR        // Rejeitada pela prefeitura
+  CANCELED     // Cancelada
+}
+
+model Invoice {
+  id           String        @id @default(uuid())
+  companyId    String
+  company      Company       @relation(fields: [companyId], references: [id])
+  customerId   String
+  customer     Customer      @relation(fields: [customerId], references: [id])
+
+  amount       Decimal       @db.Decimal(10, 2) // Valor do serviço (Ex: 150.00)
+  description  String        // Discriminação do serviço
+  serviceCode  String        // Código LC116 (ex: 1.03 - Programação, 1.07 - Suporte)
+
+  status       InvoiceStatus @default(DRAFT)
+
+  // Campos para preenchimento futuro (Retorno da API)
+  externalId       String?   // ID na Nuvem Fiscal/Focus
+  invoiceNumber    String?   // Número da Nota (ex: 20230001)
+  verificationCode String?   // Código de verificação
+  pdfUrl           String?   // Link para o PDF da nota
+  xmlUrl           String?   // Link para o XML
+
+  issuedAt      DateTime?    // Data de emissão real
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  transaction   Transaction?
+
+  @@index([companyId, status])
+  @@map("invoices")
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+model Transaction {
+  id            String          @id @default(uuid())
+  companyId     String
+  invoiceId     String?         @unique
+  description   String
+  amount        Decimal         @db.Decimal(10, 2)
+  type          TransactionType
+  dueDate       DateTime
+  paidAt        DateTime?
+  company       Company         @relation(fields: [companyId], references: [id])
+  invoice       Invoice?        @relation(fields: [invoiceId], references: [id])
+
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@map("transactions")
+}
+
+// FIM SCHEMA
