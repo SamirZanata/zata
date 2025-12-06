@@ -20,6 +20,7 @@ import { Input } from '@/src/components/ui/input';
 import { Label } from '@/src/components/ui/label';
 import { Select } from '@/src/components/ui/select';
 import { Textarea } from '@/src/components/ui/textarea';
+import { getAuthHeadersClient } from '@/src/lib/api-client-client';
 
 interface CreateInvoiceDialogProps {
   companyId: string;
@@ -50,11 +51,10 @@ export function CreateInvoiceDialog({
   const onSubmit = async (data: InvoiceFormData) => {
     setIsSubmitting(true);
     try {
+      const headers = getAuthHeadersClient();
       const response = await fetch('http://localhost:3333/invoices', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify({
           companyId: data.companyId,
           customerId: data.customerId,

@@ -3,18 +3,20 @@ import { Company } from '@/src/types/company';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/src/components/ui/card';
 import { Badge } from '@/src/components/ui/badge';
 import { CreateCompanyDialog } from '@/src/components/create-company-dialog';
+import { LogoutButton } from '@/src/components/logout-button';
+import { getAuthHeaders } from '@/src/lib/api-client';
 
 async function getCompanies(): Promise<Company[]> {
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 segundos de timeout
 
+    const headers = await getAuthHeaders();
+
     const res = await fetch('http://localhost:3333/companies', {
       cache: 'no-store',
       signal: controller.signal,
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
     });
 
     clearTimeout(timeoutId);
@@ -66,7 +68,10 @@ export default async function Home() {
               Gerencie suas empresas cadastradas
             </p>
           </div>
-          <CreateCompanyDialog />
+          <div className="flex items-center gap-2">
+            <CreateCompanyDialog />
+            <LogoutButton />
+          </div>
         </div>
 
         {companies.length === 0 ? (

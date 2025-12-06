@@ -20,6 +20,10 @@ export const companySchema = z.object({
     .string()
     .min(1, 'Email é obrigatório')
     .email('Email inválido'),
+  password: z
+    .string()
+    .min(6, 'Senha deve ter no mínimo 6 caracteres')
+    .max(100, 'Senha deve ter no máximo 100 caracteres'),
   municipalRegistration: z
     .string()
     .max(50, 'Inscrição Municipal deve ter no máximo 50 caracteres')

@@ -19,6 +19,7 @@ import { Button } from '@/src/components/ui/button';
 import { Input } from '@/src/components/ui/input';
 import { Label } from '@/src/components/ui/label';
 import { Select } from '@/src/components/ui/select';
+import { getAuthHeadersClient } from '@/src/lib/api-client-client';
 
 export function CreateCompanyDialog() {
   const [open, setOpen] = useState(false);
@@ -40,11 +41,10 @@ export function CreateCompanyDialog() {
   const onSubmit = async (data: CompanyFormData) => {
     setIsSubmitting(true);
     try {
+      const headers = getAuthHeadersClient();
       const response = await fetch('http://localhost:3333/companies', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify(data),
       });
 
@@ -151,6 +151,21 @@ export function CreateCompanyDialog() {
             />
             {errors.email && (
               <p className="text-sm text-red-500">{errors.email.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="password">
+              Senha <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              id="password"
+              type="password"
+              placeholder="••••••••"
+              {...register('password')}
+            />
+            {errors.password && (
+              <p className="text-sm text-red-500">{errors.password.message}</p>
             )}
           </div>
 
